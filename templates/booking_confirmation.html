@@ -38,18 +38,13 @@ body{margin:0;padding:0;width:100%!important;background:#F1F5F9}
      2. HERO PHOTO — HYPER-REALISTIC SUITE, BOOKING INFO OVERLAID
      ═══════════════════════════════════════════════════════════ -->
 <tr><td style="padding:0 16px;">
-  <div style="border-radius:12px;overflow:hidden;position:relative;background-color:#1B2E4A;">
+  <div style="border-radius:12px;overflow:hidden;background:linear-gradient(145deg,#1B2E4A 0%,#243B5C 30%,#1B2E4A 60%,#16253D 100%);">
 
-    {% if hero_image %}
-    <img src="{{ hero_image }}" alt="Hotel" style="width:100%;height:240px;object-fit:cover;display:block;" />
-    {% endif %}
+    <!-- Top accent bar -->
+    <div style="height:4px;background:linear-gradient(90deg,#CA8A04,#E8B84A,#CA8A04);"></div>
 
-    <!-- Gradient overlay + content positioned over the image -->
-    <div style="{% if hero_image %}margin-top:-240px;{% endif %}background:linear-gradient(180deg,rgba(27,46,74,.1) 0%,rgba(27,46,74,.65) 35%,rgba(27,46,74,.95) 100%);">
-    <div style="height:140px;"></div>
-
-    <!-- Guest + Dates overlay on the photo -->
-    <div style="padding:0 24px 20px;">
+    <!-- Guest + Dates -->
+    <div style="padding:28px 24px 20px;">
       <p style="font-family:Montserrat,sans-serif;font-size:10px;color:rgba(255,255,255,.45);margin:0;text-transform:uppercase;letter-spacing:1.5px;">Reservation For</p>
       <p style="font-family:'Playfair Display',Cormorant,Georgia,serif;font-size:20px;font-weight:700;color:#FFFFFF;margin:4px 0 18px;">{{ guest_name }}</p>
 
@@ -67,7 +62,7 @@ body{margin:0;padding:0;width:100%!important;background:#F1F5F9}
       </table>
     </div>
 
-  </div></div>
+  </div>
 </td></tr>
 
 <!-- ═══════════════════════════════════════════════════════════
