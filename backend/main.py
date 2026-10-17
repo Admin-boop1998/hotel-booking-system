@@ -37,7 +37,7 @@ from database import (
     update_booking_fields, get_bookings_for_export,
 )
 from email_service import send_booking_confirmation, send_receipt_email, send_alternative_payment_email
-from paypal_service import create_order, capture_order, verify_webhook_signature, void_order
+from paypal_service import create_order, capture_order, verify_webhook_signature, void_order, create_invoice
 from paste_parser import parse_raw_booking
 import payment_config
 import sheets_sync
@@ -327,7 +327,7 @@ async def create_booking(req: BookingRequest):
     paypal_url = ""
     paypal_order_id = ""
     paypal_error = ""
-    if method in ("paypal", "paypal_invoice"):
+    if method == "paypal":
         try:
             pp = await create_order(data)
             paypal_url = pp["approval_url"]
@@ -335,7 +335,16 @@ async def create_booking(req: BookingRequest):
             data["paypal_order_id"] = paypal_order_id
         except Exception as e:
             paypal_error = str(e)
-            log.warning(f"PayPal failed for {booking_ref}: {e}")
+            log.warning(f"PayPal checkout failed for {booking_ref}: {e}")
+    elif method == "paypal_invoice":
+        try:
+            inv = await create_invoice(data)
+            paypal_url = inv.get("invoice_url", "")
+            paypal_order_id = inv.get("invoice_id", "")
+            data["paypal_order_id"] = paypal_order_id
+        except Exception as e:
+            paypal_error = str(e)
+            log.warning(f"PayPal invoice failed for {booking_ref}: {e}")
 
     saved = await insert_booking(data)
 

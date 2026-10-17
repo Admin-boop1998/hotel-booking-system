@@ -348,3 +348,140 @@ async def verify_webhook_signature(headers: dict, body: bytes) -> bool:
             return result
         log.error(f"Webhook verify returned {resp.status_code}")
         return False
+
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  PAYPAL INVOICING API v2
+# ══════════════════════════════════════════════════════════════════════
+
+async def create_invoice(booking: dict) -> dict:
+    """Create and send a PayPal Invoice to the guest."""
+    cid = _client_id()
+    if not cid or cid == "YOUR_PAYPAL_CLIENT_ID":
+        raise RuntimeError("PayPal credentials not configured")
+
+    token = await _get_access_token()
+    ref = booking.get("booking_ref", "")
+    guest_name = booking.get("guest_name", "Guest")
+    guest_email = booking.get("guest_email", "")
+    total = float(booking.get("total_amount", 0))
+    currency = booking.get("currency", "USD")
+    hotel_name = booking.get("parsed_hotel_name") or booking.get("room_type", "Hotel Reservation")
+    room_type = booking.get("room_type", "Standard Room")
+    checkin = booking.get("checkin_date", "")
+    checkout = booking.get("checkout_date", "")
+    nights = booking.get("parsed_nights") or 1
+
+    original_price = round(total / 0.75, 2)
+    discount_amount = round(original_price - total, 2)
+    nightly_rate = round(original_price / max(nights, 1), 2)
+
+    name_parts = guest_name.strip().split(" ", 1)
+    first_name = name_parts[0]
+    last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+    invoice_payload = {
+        "detail": {
+            "invoice_number": f"{ref}-INV",
+            "reference": ref,
+            "invoice_date": datetime.utcnow().strftime("%Y-%m-%d"),
+            "currency_code": currency,
+            "note": (
+                f"Reservation at {hotel_name}. "
+                f"{checkin} to {checkout}, {nights} night(s). "
+                f"STRICTLY NON-REFUNDABLE: By completing this payment, you agree "
+                f"this discounted wholesale rate is not eligible for a cash refund. "
+                f"Voluntary cancellation forfeits the paid amount."
+            ),
+            "terms_and_conditions": (
+                "This discounted wholesale reservation is strictly non-refundable. "
+                "Voluntary cancellation forfeits the paid amount."
+            ),
+            "payment_term": {
+                "term_type": "DUE_ON_RECEIPT"
+            },
+        },
+        "invoicer": {
+            "business_name": _brand_name(),
+            "website": "https://quotasolutions.net",
+        },
+        "primary_recipients": [{
+            "billing_info": {
+                "name": {
+                    "given_name": first_name,
+                    "surname": last_name,
+                },
+                "email_address": guest_email,
+            }
+        }],
+        "items": [
+            {
+                "name": f"Hotel Reservation: {hotel_name}",
+                "description": f"{room_type} | {checkin} to {checkout} | {nights} Night(s) | Ref: {ref}",
+                "quantity": str(nights),
+                "unit_amount": {
+                    "currency_code": currency,
+                    "value": str(nightly_rate),
+                },
+                "unit_of_measure": "QUANTITY",
+            },
+            {
+                "name": "Member Discount (25%)",
+                "description": "Wholesale rate discount applied",
+                "quantity": "1",
+                "unit_amount": {
+                    "currency_code": currency,
+                    "value": f"-{discount_amount}",
+                },
+                "unit_of_measure": "QUANTITY",
+            },
+        ],
+        "configuration": {
+            "allow_tip": False,
+            "tax_calculated_after_discount": False,
+        },
+    }
+
+    async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        # Step 1: Create draft invoice
+        resp = await client.post(
+            f"{_base_url()}/v2/invoicing/invoices",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "Prefer": "return=representation",
+            },
+            json=invoice_payload,
+        )
+        resp.raise_for_status()
+        invoice = resp.json()
+        invoice_id = invoice["id"]
+
+        # Step 2: Send the invoice (PayPal emails it to the guest)
+        send_resp = await client.post(
+            f"{_base_url()}/v2/invoicing/invoices/{invoice_id}/send",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "send_to_invoicer": True,
+                "send_to_recipient": True,
+                "additional_recipients": [],
+            },
+        )
+        send_resp.raise_for_status()
+
+    invoice_url = next(
+        (link["href"] for link in invoice.get("links", []) if link.get("rel") == "payer-view"),
+        "",
+    )
+
+    log.info(f"PayPal Invoice {invoice_id} created and sent for {ref} to {guest_email}: ${total:.2f}")
+    return {
+        "invoice_id": invoice_id,
+        "invoice_url": invoice_url,
+        "status": "SENT",
+    }
+[4906 chars total]
