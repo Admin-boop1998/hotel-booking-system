@@ -9,6 +9,7 @@ import os
 import logging
 from datetime import datetime
 import payment_config
+from hotel_photos import get_hotel_photo
 
 log = logging.getLogger("invoice")
 
@@ -70,6 +71,7 @@ def generate_invoice_html(booking: dict) -> str:
     txn_display = capture_id if capture_id and capture_id != "MANUAL" else "Manual Verification"
 
     invoice_date = datetime.utcnow().strftime("%B %d, %Y")
+    hotel_photo = get_hotel_photo(hotel, ref)
 
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -102,6 +104,9 @@ td{{padding:8px 16px;font-size:13px;border-bottom:1px solid #F1F5F9}}
 @media print{{body{{padding:20px 30px}}}}
 </style></head><body>
 
+<!-- Hotel Photo -->
+{'<div style="border-radius:10px;overflow:hidden;margin-bottom:24px;"><img src="' + hotel_photo + '" alt="' + hotel + '" style="width:100%;height:200px;object-fit:cover;display:block;" /></div>' if hotel_photo and hotel_photo.startswith('http') else ''}
+
 <div class="header">
   <div><div class="brand">{company}</div>
   <div class="brand-sub">{company_website}{(' · ' + company_phone) if company_phone else ''}</div></div>
@@ -117,7 +122,7 @@ td{{padding:8px 16px;font-size:13px;border-bottom:1px solid #F1F5F9}}
   <div class="party">
     <div class="party-label">Property</div>
     <div class="party-name">{hotel}</div>
-    <div class="party-detail">{address if address else ''}<br>Check-in: {ci}<br>Check-out: {co}</div>
+    <div class="party-detail">{address if address else ''}<br>Check-in: {ci}<br>Check-out: {co}<br>{booking.get('room_type','')} · {booking.get('num_guests',1)} Guest(s)</div>
   </div>
 </div>
 
@@ -140,7 +145,7 @@ td{{padding:8px 16px;font-size:13px;border-bottom:1px solid #F1F5F9}}
   <tbody>
     <tr><td style="padding:6px 16px;color:#64748B;width:40%">Payment Method</td><td style="padding:6px 16px;font-weight:500">{payment_method_display}</td></tr>
     <tr><td style="padding:6px 16px;color:#64748B;">Transaction ID</td><td style="padding:6px 16px;font-weight:500">{txn_display}</td></tr>
-    <tr><td style="padding:6px 16px;color:#64748B;">Status</td><td style="padding:6px 16px;font-weight:700;color:#059669;">PAID — CONFIRMED</td></tr>
+    <tr><td style="padding:6px 16px;color:#64748B;">Status</td><td style="padding:6px 16px;font-weight:700;color:{'#059669' if booking.get('status')=='Confirmed' else '#CA8A04'};">{'PAID — CONFIRMED' if booking.get('status')=='Confirmed' else 'PENDING PAYMENT'}</td></tr>
     <tr><td style="padding:6px 16px;color:#64748B;">Confirmation Date</td><td style="padding:6px 16px;">{invoice_date}</td></tr>
   </tbody>
 </table>

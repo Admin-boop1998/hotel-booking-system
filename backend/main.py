@@ -356,9 +356,10 @@ async def create_booking(req: BookingRequest):
     email_error = ""
     try:
         email_path = send_booking_confirmation(saved, paypal_url, method)
+        generate_invoice_html(saved)  # Generate invoice as bill-to-pay doc
     except Exception as e:
         email_error = str(e)
-        log.warning(f"Email failed for {booking_ref}: {e}")
+        log.warning(f"Email/invoice failed for {booking_ref}: {e}")
 
     # Sync to Google Sheets
     try:
