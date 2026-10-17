@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{{ hotel_name }}</title>
+<style>
+body,table,td,a{-webkit-text-size-adjust:100%}
+body{margin:0;padding:0;width:100%!important;background:#F1F5F9}
+@media only screen and (max-width:620px){
+  .c{width:100%!important}
+  .htl{font-size:26px!important}
+  .cb{padding:16px!important}
+  .cta{padding:16px 20px!important;font-size:15px!important}
+  .dtd{display:block!important;width:100%!important;padding:10px 0!important}
+  .bed-img{width:80px!important;height:80px!important}
+}
+</style>
+</head><body style="margin:0;padding:0;background:#F1F5F9;">
+<div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F1F5F9;">{{ hotel_name }} · {{ checkin_date }} – {{ checkout_date }} · ${{ total_amount }}</div>
+<center>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F1F5F9;">
+<tr><td align="center" style="padding:20px 10px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="580" class="c" style="max-width:580px;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.07);">
+
+<!-- ═══════════════════════════════════════════════════════════
+     1. HOTEL NAME — BIG, CLASSIC, LOOKS LIKE IT COMES FROM THE HOTEL
+     ═══════════════════════════════════════════════════════════ -->
+<tr><td style="padding:28px 28px 6px;text-align:center;">
+  <h1 class="htl" style="font-family:'Playfair Display',Cormorant,Georgia,'Times New Roman',serif;font-size:34px;font-weight:700;color:#1B2E4A;margin:0;line-height:1.1;letter-spacing:-.5px;">{{ hotel_name }}</h1>
+</td></tr>
+
+<!-- Address small -->
+{% if hotel_address %}
+<tr><td style="padding:0 28px 20px;text-align:center;">
+  <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:11px;color:#8E99A4;margin:0;letter-spacing:.4px;">{{ hotel_address }}</p>
+</td></tr>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════════════════
+     2. HERO PHOTO — HYPER-REALISTIC SUITE, BOOKING INFO OVERLAID
+     ═══════════════════════════════════════════════════════════ -->
+<tr><td style="padding:0 16px;">
+  <div style="border-radius:12px;overflow:hidden;background:linear-gradient(180deg,rgba(27,46,74,.05) 0%,rgba(27,46,74,.6) 40%,rgba(27,46,74,.94) 100%){% if hero_image %},url('{{ hero_image }}') center top/cover{% endif %};background-color:#1B2E4A;">
+
+    <!-- Spacer for photo visibility -->
+    <div style="height:140px;"></div>
+
+    <!-- Guest + Dates overlay on the photo -->
+    <div style="padding:0 24px 20px;">
+      <p style="font-family:Montserrat,sans-serif;font-size:10px;color:rgba(255,255,255,.45);margin:0;text-transform:uppercase;letter-spacing:1.5px;">Reservation For</p>
+      <p style="font-family:'Playfair Display',Cormorant,Georgia,serif;font-size:20px;font-weight:700;color:#FFFFFF;margin:4px 0 18px;">{{ guest_name }}</p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td class="dtd" style="width:48%;padding:12px 16px;background:rgba(255,255,255,.08);border-radius:8px 0 0 8px;border-right:1px solid rgba(255,255,255,.06);">
+            <p style="font-family:Montserrat,sans-serif;font-size:9px;color:rgba(255,255,255,.45);margin:0;text-transform:uppercase;letter-spacing:1px;">Check-In</p>
+            <p style="font-family:'Playfair Display',Cormorant,Georgia,serif;font-size:17px;font-weight:700;color:#fff;margin:4px 0 0;">{{ checkin_date }}</p>
+          </td>
+          <td class="dtd" style="width:48%;padding:12px 16px;background:rgba(255,255,255,.08);border-radius:0 8px 8px 0;">
+            <p style="font-family:Montserrat,sans-serif;font-size:9px;color:rgba(255,255,255,.45);margin:0;text-transform:uppercase;letter-spacing:1px;">Check-Out</p>
+            <p style="font-family:'Playfair Display',Cormorant,Georgia,serif;font-size:17px;font-weight:700;color:#fff;margin:4px 0 0;">{{ checkout_date }}</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+  </div>
+</td></tr>
+
+<!-- ═══════════════════════════════════════════════════════════
+     3. ROOM TYPE WITH BED PHOTO THUMBNAIL
+     ═══════════════════════════════════════════════════════════ -->
+<tr><td style="padding:16px 24px 14px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F7F8FA;border-radius:10px;overflow:hidden;border:1px solid #E8EAEE;">
+    <tr>
+      <td style="width:90px;padding:12px;vertical-align:middle;">
+        {% if bed_icon %}<img src="{{ bed_icon }}" class="bed-img" alt="{{ room_type }}" style="width:90px;height:90px;border-radius:8px;object-fit:cover;display:block;" />{% else %}<div style="width:90px;height:90px;border-radius:8px;background:#DFE2E6;"></div>{% endif %}
+      </td>
+      <td style="padding:12px 16px;vertical-align:middle;">
+        <p style="font-family:'Playfair Display',Cormorant,Georgia,serif;font-size:16px;font-weight:700;color:#1B2E4A;margin:0;">{{ room_type }}</p>
+        <p style="font-family:Montserrat,sans-serif;font-size:12px;color:#6B7785;margin:5px 0 0;">{{ nights }} Night{{ 's' if nights > 1 else '' }} · {{ num_guests }} Adult{{ 's' if num_guests > 1 else '' }}</p>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+
+<!-- ═══════════════════════════════════════════════════════════
+     4. PRICING — MATH COMPUTATION
+     ═══════════════════════════════════════════════════════════ -->
+<tr><td style="padding:4px 24px 0;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family:Montserrat,sans-serif;">
+    <tr>
+      <td style="padding:9px 0;font-size:13px;color:#8E99A4;">Standard Rate</td>
+      <td style="padding:9px 0;font-size:14px;color:#8E99A4;text-align:right;text-decoration:line-through;">${{ original_price }}</td>
+    </tr>
+    {% if taxes %}
+    <tr>
+      <td style="padding:9px 0;font-size:13px;color:#8E99A4;">Taxes &amp; Fees</td>
+      <td style="padding:9px 0;font-size:13px;color:#8E99A4;text-align:right;">${{ taxes }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td style="padding:9px 0;font-size:13px;color:#2D8B4E;font-weight:600;">Discount ({{ discount_percent }}%)</td>
+      <td style="padding:9px 0;font-size:14px;color:#2D8B4E;font-weight:700;text-align:right;">−${{ discount_amount }}</td>
+    </tr>
+  </table>
+</td></tr>
+
+<!-- Total bar -->
+<tr><td style="padding:6px 24px 20px;">
+  <div style="background:#1B2E4A;border-radius:10px;padding:16px 20px;">
+    <table role="presentation" width="100%"><tr>
+      <td style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:600;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:1px;vertical-align:middle;">Total Due</td>
+      <td style="font-family:'Playfair Display',Cormorant,Georgia,serif;font-size:34px;font-weight:700;color:#FFFFFF;text-align:right;vertical-align:middle;line-height:1;">${{ total_amount }}</td>
+    </tr></table>
+  </div>
+</td></tr>
+
+<!-- ═══════════════════════════════════════════════════════════
+     5. PAYMENT BUTTON
+     ═══════════════════════════════════════════════════════════ -->
+{% if payment_method == 'paypal' or payment_method == 'paypal_invoice' %}
+<tr><td align="center" style="padding:0 24px 6px;">
+  <table role="presentation" width="100%"><tr><td align="center" style="background:linear-gradient(135deg,#CA8A04 0%,#B07C04 100%);border-radius:10px;">
+    <a href="{{ paypal_url }}" target="_blank" class="cta" style="display:block;padding:18px 32px;font-family:Montserrat,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:.5px;text-transform:uppercase;">Complete Reservation &amp; Pay</a>
+  </td></tr></table>
+</td></tr>
+<tr><td align="center" style="padding:2px 24px 20px;"><p style="font-family:Montserrat,sans-serif;font-size:9px;color:#B0B8C1;margin:0;">Secured by PayPal · 256-bit encryption</p></td></tr>
+
+{% elif payment_method == 'bank_transfer' %}
+<tr><td style="padding:0 24px 20px;">
+  <table role="presentation" width="100%" style="border:1px solid #E5E9EE;border-radius:10px;overflow:hidden;">
+    <tr><td style="background:#1B2E4A;padding:12px 18px;">
+      <span style="font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.5px;">Wire / ACH Transfer — ${{ total_amount }}</span>
+    </td></tr>
+    <tr><td style="padding:14px 18px;">
+      <p style="font-family:Montserrat,sans-serif;font-size:11px;color:#6B7785;margin:0 0 10px;">Include <strong style="color:#1B2E4A;">{{ booking_ref }}</strong> in memo.</p>
+      <table role="presentation" width="100%" style="font-family:Montserrat,sans-serif;font-size:12px;">
+        <tr><td style="padding:5px 0;color:#8E99A4;width:35%;">Name</td><td style="padding:5px 0;color:#1B2E4A;font-weight:600;font-family:'Courier New',monospace;-webkit-user-select:all;user-select:all;">{{ beneficiary_name }}</td></tr>
+        {% if bank_name %}<tr><td style="padding:5px 0;color:#8E99A4;">Bank</td><td style="padding:5px 0;color:#1B2E4A;-webkit-user-select:all;user-select:all;">{{ bank_name }}</td></tr>{% endif %}
+        <tr><td style="padding:5px 0;color:#8E99A4;">Account</td><td style="padding:5px 0;color:#1B2E4A;font-weight:700;font-family:'Courier New',monospace;letter-spacing:.5px;-webkit-user-select:all;user-select:all;">{{ wire_account }}</td></tr>
+        <tr><td style="padding:5px 0;color:#8E99A4;">Routing</td><td style="padding:5px 0;color:#1B2E4A;font-weight:700;font-family:'Courier New',monospace;letter-spacing:.5px;-webkit-user-select:all;user-select:all;">{{ wire_routing }}</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</td></tr>
+{% endif %}
+
+<!-- CLICKWRAP (all methods) -->
+<tr><td style="padding:0 24px 14px;">
+  <p style="font-family:Montserrat,sans-serif;font-size:10px;color:#64748B;margin:0;line-height:1.6;text-align:center;"><strong style="color:#1B2E4A;">Strictly Non-Refundable</strong><br>By completing this payment, you agree this discounted wholesale rate is not eligible for a cash refund. Voluntary cancellation forfeits the paid amount.</p>
+</td></tr>
+
+<!-- Proof reminder (non-PayPal) -->
+{% if payment_method not in ['paypal', 'paypal_invoice'] %}
+<tr><td style="padding:0 24px 14px;">
+  <p style="font-family:Montserrat,sans-serif;font-size:11px;color:#92400E;margin:0;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:11px 14px;line-height:1.5;"><strong>Reply to this email</strong> with a screenshot of your payment confirmation.</p>
+</td></tr>
+{% endif %}
+
+<!-- Cancellation (one line) -->
+<tr><td style="padding:0 24px 14px;">
+  <p style="font-family:Montserrat,sans-serif;font-size:10px;color:#B0B8C1;margin:0;line-height:1.5;">All payments are non-refundable · Voluntary cancellation forfeits the paid amount · {{ booking_ref }}</p>
+</td></tr>
+
+<!-- ═══════════════════════════════════════════════════════════
+     6. CUSTOMER SUPPORT CONTACT
+     ═══════════════════════════════════════════════════════════ -->
+<tr><td style="padding:0 24px 18px;border-top:1px solid #F0F2F5;">
+  <table role="presentation" width="100%" style="padding-top:14px;"><tr>
+    <td style="font-family:Montserrat,sans-serif;font-size:11px;color:#6B7785;line-height:1.6;">
+      <strong style="color:#1B2E4A;">{{ agent_name }}</strong>{% if agent_phone %} · {{ agent_phone }}{% endif %}<br>
+      {% if company_phone %}{{ company_phone }}{% endif %}{% if support_hours %} · {{ support_hours }}{% endif %}
+    </td>
+  </tr></table>
+</td></tr>
+
+<!-- ═══════════════════════════════════════════════════════════
+     7. FOOTER — FINAL TOUCH
+     ═══════════════════════════════════════════════════════════ -->
+<tr><td style="background:#1B2E4A;padding:16px 24px;text-align:center;border-radius:0 0 12px 12px;">
+  <p style="font-family:Montserrat,sans-serif;font-size:9px;color:rgba(255,255,255,.35);margin:0;letter-spacing:.3px;">{{ company_name }} · {{ company_website }} · {{ booking_ref }}</p>
+  <p style="font-family:Montserrat,sans-serif;font-size:8px;color:rgba(255,255,255,.2);margin:4px 0 0;">© {{ year }} All rights reserved</p>
+</td></tr>
+
+</table>
+</td></tr></table>
+</center>
+</body></html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Complete Your Reservation — {{ booking_ref }}</title>
+<style>body,table,td,a{-webkit-text-size-adjust:100%}body{margin:0;padding:0;width:100%!important;background:#F1F5F9}
+@media only screen and (max-width:640px){.c{width:100%!important}.cb{padding:20px 16px!important}}</style>
+</head><body style="margin:0;padding:0;background:#F1F5F9;">
+<center>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F1F5F9;">
+<tr><td align="center" style="padding:28px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="580" class="c" style="max-width:580px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 24px rgba(0,0,0,.04);">
+
+  <!-- HEADER -->
+  <tr><td style="background:#1B2E4A;padding:14px 28px;">
+    <table role="presentation" width="100%"><tr>
+      <td><span style="font-family:Cormorant,Georgia,serif;font-size:14px;font-weight:700;color:#fff;">{{ company_name }}</span></td>
+      <td align="right"><span style="font-family:Montserrat,Helvetica,sans-serif;font-size:10px;color:rgba(255,255,255,.5);">Ref: {{ booking_ref }}</span></td>
+    </tr></table>
+  </td></tr>
+
+  <!-- REASSURANCE -->
+  <tr><td class="cb" style="padding:28px 28px 16px;">
+    <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+      <span style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#059669;">✓ Your reservation is still held for the next 24 hours.</span>
+    </div>
+    <h1 style="font-family:Cormorant,Georgia,serif;font-size:22px;font-weight:700;color:#1B2E4A;margin:0 0 10px;">Let's complete your booking, {{ guest_name }}.</h1>
+    <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:14px;color:#475569;margin:0;line-height:1.6;">The initial payment could not be processed. This is not unusual — it can happen due to bank security settings, daily transaction limits, or a temporary connection issue. It does not reflect your account status.</p>
+  </td></tr>
+
+  <!-- BOOKING SUMMARY -->
+  <tr><td class="cb" style="padding:0 28px 16px;">
+    <table role="presentation" width="100%" style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;">
+      <tr><td style="padding:12px 18px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+        <span style="font-family:Cormorant,Georgia,serif;font-size:16px;font-weight:700;color:#1B2E4A;">{{ hotel_name }}</span>
+        <span style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#64748B;margin-left:6px;">· {{ checkin_date }} to {{ checkout_date }}</span>
+      </td></tr>
+      <tr><td style="padding:12px 18px;"><table role="presentation" width="100%"><tr>
+        <td style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#64748B;">{{ room_type }} · {{ nights }} Night{{ 's' if nights > 1 else '' }}</td>
+        <td style="font-family:Cormorant,Georgia,serif;font-size:18px;font-weight:700;color:#1B2E4A;text-align:right;">${{ total_amount }}</td>
+      </tr></table></td></tr>
+    </table>
+  </td></tr>
+
+  <!-- OPTION 1: TRY AGAIN (PayPal) -->
+  {% if paypal_retry_url %}
+  <tr><td class="cb" style="padding:0 28px 10px;">
+    <span style="font-family:Montserrat,Helvetica,sans-serif;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:1px;">Recommended</span>
+  </td></tr>
+  <tr><td align="center" style="padding:0 28px 8px;"><table role="presentation" width="100%"><tr>
+    <td align="center" style="background:#CA8A04;border-radius:10px;">
+      <a href="{{ paypal_retry_url }}" target="_blank" style="display:block;padding:16px 28px;font-family:Montserrat,Helvetica,sans-serif;font-size:16px;font-weight:700;color:#fff;text-decoration:none;">Try Again with a Different Card</a>
+    </td>
+  </tr></table></td></tr>
+  <tr><td align="center" style="padding:0 28px 20px;"><p style="font-family:Montserrat,Helvetica,sans-serif;font-size:11px;color:#94A3B8;margin:0;">Use a different card, debit card, or PayPal balance</p></td></tr>
+  {% endif %}
+
+  <!-- DIVIDER -->
+  <tr><td style="padding:4px 28px 16px;">
+    <table role="presentation" width="100%"><tr>
+      <td style="border-bottom:1px solid #E2E8F0;"></td>
+      <td style="width:100px;text-align:center;font-family:Montserrat,Helvetica,sans-serif;font-size:11px;color:#94A3B8;white-space:nowrap;padding:0 12px;">OR</td>
+      <td style="border-bottom:1px solid #E2E8F0;"></td>
+    </tr></table>
+  </td></tr>
+
+  <!-- OPTION 2: ZELLE (if configured) -->
+  {% if zelle_contact %}
+  <tr><td class="cb" style="padding:0 28px 16px;">
+    <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:12px;padding:18px;text-align:center;">
+      <span style="font-family:Montserrat,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#7C3AED;">Pay Instantly with Zelle</span>
+      <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#475569;margin:6px 0 10px;">Open your banking app → Zelle → send <strong>${{ total_amount }}</strong> to:</p>
+      <div style="background:#fff;border:1px solid #DDD6FE;border-radius:8px;padding:12px;display:inline-block;"><span style="font-family:Montserrat,Helvetica,sans-serif;font-size:18px;font-weight:700;color:#7C3AED;">{{ zelle_contact }}</span></div>
+      <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:11px;color:#64748B;margin:6px 0 0;">Memo: <strong>{{ booking_ref }}</strong></p>
+    </div>
+  </td></tr>
+  {% endif %}
+
+  <!-- OPTION 3: BANK TRANSFER -->
+  <tr><td class="cb" style="padding:0 28px 16px;">
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:18px;">
+      <span style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#334155;">Bank Transfer</span>
+      <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#475569;margin:6px 0 10px;">Send <strong>${{ total_amount }}</strong> · Memo: <strong>{{ booking_ref }}</strong></p>
+      <table role="presentation" width="100%" style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;">
+        <tr><td style="padding:4px 0;color:#64748B;">Account Name</td><td style="padding:4px 0;color:#1B2E4A;font-weight:500;text-align:right;">{{ beneficiary_name }}</td></tr>
+        {% if bank_name %}<tr><td style="padding:4px 0;color:#64748B;">Bank</td><td style="padding:4px 0;color:#1B2E4A;text-align:right;">{{ bank_name }}</td></tr>{% endif %}
+        <tr><td style="padding:4px 0;color:#64748B;">Account</td><td style="padding:4px 0;color:#1B2E4A;font-weight:600;text-align:right;">{{ wire_account }}</td></tr>
+        <tr><td style="padding:4px 0;color:#64748B;">Routing</td><td style="padding:4px 0;color:#1B2E4A;font-weight:600;text-align:right;">{{ wire_routing }}</td></tr>
+        {% if bank_address %}<tr><td style="padding:4px 0;color:#64748B;">Bank Address</td><td style="padding:4px 0;color:#1B2E4A;text-align:right;">{{ bank_address }}</td></tr>{% endif %}
+      </table>
+    </div>
+  </td></tr>
+
+  <!-- URGENCY -->
+  <tr><td class="cb" style="padding:0 28px 20px;">
+    <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#64748B;margin:0;line-height:1.6;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:12px 16px;">
+      To guarantee your rate, please complete payment within <strong style="color:#92400E;">24 hours</strong>. After 48 hours, the reservation may be released.
+    </p>
+  </td></tr>
+
+  <!-- AGENT -->
+  <tr><td style="padding:4px 28px 20px;">
+    <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;color:#475569;margin:0;line-height:1.6;">Need help? Your agent <strong style="color:#1B2E4A;">{{ agent_name }}</strong>{% if agent_phone %} (<strong>{{ agent_phone }}</strong>){% endif %} is available to assist you.{% if company_phone %}<br>Or call <strong>{{ company_phone }}</strong>{% endif %}{% if support_hours %} · {{ support_hours }}{% endif %}</p>
+  </td></tr>
+
+  <!-- FOOTER -->
+  <tr><td style="background:#1B2E4A;padding:14px 28px;">
+    <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:9px;color:rgba(255,255,255,.35);margin:0;text-align:center;letter-spacing:.3px;">{{ company_name }}{% if company_website %} · {{ company_website }}{% endif %} · Ref: {{ booking_ref }} · © {{ year }}</p>
+  </td></tr>
+
+</table>
+</td></tr></table>
+</center>
+</body></html>

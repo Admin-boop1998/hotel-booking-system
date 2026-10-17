@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Booking Confirmed — {{ booking_ref }}</title>
+<style>body,table,td,a{-webkit-text-size-adjust:100%}body{margin:0;padding:0;width:100%!important;background:#F1F5F9}
+@media only screen and (max-width:640px){.c{width:100%!important}.cb{padding:20px 16px!important}}</style>
+</head><body style="margin:0;padding:0;background:#F1F5F9;">
+<center>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F1F5F9;">
+<tr><td align="center" style="padding:28px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="580" class="c" style="max-width:580px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 24px rgba(0,0,0,.04);">
+
+  <!-- HEADER -->
+  <tr><td style="background:#1B2E4A;padding:24px 28px;text-align:center;">
+    <span style="font-family:Montserrat,sans-serif;font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1.5px;">Booking Confirmed</span>
+    <h1 style="font-family:Cormorant,Georgia,serif;font-size:26px;font-weight:700;color:#fff;margin:8px 0 0;">You're All Set, {{ guest_name.split(' ')[0] }}!</h1>
+  </td></tr>
+
+  <!-- CONFIRMATION NUMBER -->
+  <tr><td class="cb" style="padding:24px 28px 16px;text-align:center;">
+    <span style="font-family:Montserrat,Helvetica,sans-serif;font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:1px;">Confirmation Number</span>
+    <div style="font-family:Cormorant,Georgia,serif;font-size:24px;font-weight:700;color:#1B2E4A;background:#F8FAFC;display:inline-block;padding:10px 24px;border-radius:8px;border:2px solid #E2E8F0;margin:8px 0;">{{ booking_ref }}</div>
+    <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#059669;font-weight:600;margin:8px 0 0;">Show this at the front desk when you check in.</p>
+  </td></tr>
+
+  <!-- BOOKING SUMMARY -->
+  <tr><td class="cb" style="padding:0 28px 16px;">
+    <table role="presentation" width="100%" style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;">
+      <tr><td style="padding:14px 18px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+        <span style="font-family:Cormorant,Georgia,serif;font-size:18px;font-weight:700;color:#1B2E4A;">{{ hotel_name }}</span>
+        {% if hotel_address %}<br><span style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#94A3B8;">{{ hotel_address }}</span>{% endif %}
+      </td></tr>
+      <tr><td style="padding:10px 18px;border-bottom:1px solid #F1F5F9;"><table role="presentation" width="100%"><tr><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#64748B;">Room</td><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;color:#1B2E4A;font-weight:500;text-align:right;">{{ room_type }}</td></tr></table></td></tr>
+      <tr><td style="padding:10px 18px;border-bottom:1px solid #F1F5F9;"><table role="presentation" width="100%"><tr><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#64748B;">Check-In</td><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;color:#1B2E4A;font-weight:600;text-align:right;">{{ checkin_date }} · {{ checkin_time }}</td></tr></table></td></tr>
+      <tr><td style="padding:10px 18px;border-bottom:1px solid #F1F5F9;"><table role="presentation" width="100%"><tr><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#64748B;">Check-Out</td><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;color:#1B2E4A;font-weight:600;text-align:right;">{{ checkout_date }} · {{ checkout_time }}</td></tr></table></td></tr>
+      <tr><td style="padding:10px 18px;border-bottom:1px solid #F1F5F9;"><table role="presentation" width="100%"><tr><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#64748B;">Duration</td><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;color:#1B2E4A;text-align:right;">{{ nights }} Night{{ 's' if nights > 1 else '' }} · {{ num_guests }} Guest{{ 's' if num_guests > 1 else '' }}</td></tr></table></td></tr>
+      <tr><td style="padding:12px 18px;background:#ECFDF5;"><table role="presentation" width="100%"><tr><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#059669;">Total Paid</td><td style="font-family:Cormorant,Georgia,serif;font-size:20px;font-weight:700;color:#059669;text-align:right;">${{ total_amount }}</td></tr></table></td></tr>
+      {% if paypal_capture_id and paypal_capture_id != 'N/A' %}
+      <tr><td style="padding:8px 18px;border-top:1px solid #A7F3D0;"><table role="presentation" width="100%"><tr><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:11px;color:#64748B;">Transaction ID</td><td style="font-family:Montserrat,Helvetica,sans-serif;font-size:11px;color:#334155;font-weight:500;text-align:right;">{{ paypal_capture_id }}</td></tr></table></td></tr>
+      {% endif %}
+    </table>
+  </td></tr>
+
+  <!-- WHAT HAPPENS NEXT -->
+  <tr><td class="cb" style="padding:0 28px 16px;">
+    <table role="presentation" width="100%" style="background:#EFF6FF;border:1px solid #DBEAFE;border-radius:10px;overflow:hidden;">
+      <tr><td style="padding:16px 18px;">
+        <span style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#1B2E4A;">What Happens Next</span>
+        <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#334155;margin:8px 0 0;line-height:1.7;">Your reservation with <strong>{{ hotel_name }}</strong> is being finalized. You may receive a separate confirmation email directly from the hotel within 24–48 hours. If you do not receive one, don't worry — your booking is guaranteed and your agent can provide the hotel's confirmation at any time.</p>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <!-- WHAT TO BRING -->
+  <tr><td class="cb" style="padding:0 28px 16px;">
+    <table role="presentation" width="100%" style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;">
+      <tr><td style="padding:14px 18px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+        <span style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#1B2E4A;">What to Bring</span>
+      </td></tr>
+      <tr><td style="padding:12px 18px;">
+        <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;color:#334155;margin:0;line-height:1.8;">
+          <span style="color:#059669;font-weight:700;">&#10003;</span> A valid photo ID (driver's license or passport)<br>
+          <span style="color:#059669;font-weight:700;">&#10003;</span> This email — show your confirmation number at check-in<br>
+          <span style="color:#059669;font-weight:700;">&#10003;</span> A credit or debit card for incidentals (room service, minibar, parking)
+        </p>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <!-- CANCELLATION POLICY -->
+  <tr><td class="cb" style="padding:0 28px 16px;">
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:14px 18px;">
+      <span style="font-family:Montserrat,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#334155;">Strictly Non-Refundable</span>
+      <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:11px;color:#64748B;margin:6px 0 0;line-height:1.7;">
+        By completing this payment, you agreed that this discounted wholesale rate is not eligible for a cash refund. Voluntary cancellation forfeits the paid amount. To modify dates, contact your agent.
+      </p>
+    </div>
+  </td></tr>
+
+  <!-- OFFICIAL RECORD -->
+  <tr><td class="cb" style="padding:0 28px 16px;">
+    <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:11px;color:#64748B;margin:0;line-height:1.5;text-align:center;">
+      This email and the attached PDF invoice serve as your official receipt and proof of transaction. Please keep them for your records.
+    </p>
+  </td></tr>
+
+  <!-- CONTACT -->
+  <tr><td style="padding:4px 28px 20px;">
+    <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:13px;color:#475569;margin:0;line-height:1.6;">Your agent: <strong style="color:#1B2E4A;">{{ agent_name }}</strong>{% if agent_phone %} · <strong>{{ agent_phone }}</strong>{% endif %}{% if company_phone %}<br>General support: <strong>{{ company_phone }}</strong>{% endif %}{% if support_hours %} · {{ support_hours }}{% endif %}</p>
+  </td></tr>
+
+  <!-- FOOTER -->
+  <tr><td style="background:#1B2E4A;padding:14px 28px;">
+    <p style="font-family:Montserrat,Helvetica,sans-serif;font-size:9px;color:rgba(255,255,255,.35);margin:0;text-align:center;letter-spacing:.3px;">{{ company_name }}{% if company_website %} · {{ company_website }}{% endif %} · This email serves as your official receipt. · © {{ year }}</p>
+  </td></tr>
+
+</table>
+</td></tr></table>
+</center>
+</body></html>
