@@ -1,24 +1,24 @@
 """
-Hotel Photo Service
-───────────────────
-Auto-fetches real hotel photos using Google Places API.
-Falls back to Unsplash curated photos if API unavailable.
+Hotel Photo Service — SerpApi Google Maps Integration
+──────────────────────────────────────────────────────
+Auto-fetches REAL hotel photos from Google Maps via SerpApi.
+Photos served from lh3.googleusercontent.com (Google CDN).
+Gmail displays these 100% of the time.
 
-Setup: Set GOOGLE_PLACES_API_KEY in your environment variables.
-Get one at: https://console.cloud.google.com → APIs → Places API → Credentials
+Caches results per hotel — same hotel = no API call.
+Falls back to Unsplash if API unavailable.
 """
 import os
+import re
 import httpx
 import hashlib
 import logging
 import json
-from pathlib import Path
 
 log = logging.getLogger("hotel_photos")
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "photo_cache")
 
-# Unsplash fallbacks (guaranteed to work in Gmail)
 FALLBACK_HOTELS = [
     "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=340&fit=crop&q=80",
     "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=340&fit=crop&q=80",
@@ -37,106 +37,91 @@ FALLBACK_BEDS = {
 
 
 def _api_key():
-    return os.getenv("GOOGLE_PLACES_API_KEY", "")
+    return os.getenv("SERPAPI_KEY", "")
 
 
-def _cache_key(hotel_name):
-    return hashlib.md5(hotel_name.lower().strip().encode()).hexdigest()
+def _cache_key(name):
+    return hashlib.md5(name.lower().strip().encode()).hexdigest()
 
 
-def _get_cached(hotel_name, photo_type="hotel"):
-    """Check if we already fetched this hotel's photo."""
+def _get_cached(name, ptype="hotel"):
     os.makedirs(CACHE_DIR, exist_ok=True)
-    cache_file = os.path.join(CACHE_DIR, f"{_cache_key(hotel_name)}_{photo_type}.json")
-    if os.path.exists(cache_file):
+    f = os.path.join(CACHE_DIR, f"{_cache_key(name)}_{ptype}.json")
+    if os.path.exists(f):
         try:
-            with open(cache_file, "r") as f:
-                data = json.load(f)
-            if data.get("url"):
-                return data["url"]
+            with open(f) as fh:
+                d = json.load(fh)
+            if d.get("url"):
+                return d["url"]
         except Exception:
             pass
     return None
 
 
-def _set_cache(hotel_name, photo_type, url):
-    """Cache the photo URL for future bookings at the same hotel."""
+def _set_cache(name, ptype, url):
     os.makedirs(CACHE_DIR, exist_ok=True)
-    cache_file = os.path.join(CACHE_DIR, f"{_cache_key(hotel_name)}_{photo_type}.json")
-    with open(cache_file, "w") as f:
-        json.dump({"hotel": hotel_name, "url": url, "type": photo_type}, f)
+    f = os.path.join(CACHE_DIR, f"{_cache_key(name)}_{ptype}.json")
+    with open(f, "w") as fh:
+        json.dump({"name": name, "url": url, "type": ptype}, fh)
+
+
+def _resize_google_url(url, width=600, height=340):
+    """Resize a Google CDN image URL to email-friendly dimensions."""
+    if "lh3.googleusercontent.com" in url and "=" in url:
+        base = url.rsplit("=", 1)[0]
+        return f"{base}=w{width}-h{height}-k-no"
+    return url
 
 
 def get_hotel_photo(hotel_name, booking_ref=""):
-    """Get a real photo of the hotel. Uses Google Places API with local caching."""
-    if not hotel_name or hotel_name == "Your Hotel":
-        return _fallback_hotel(booking_ref)
+    """Get a real photo of the hotel from Google Maps via SerpApi."""
+    if not hotel_name or hotel_name in ("Your Hotel", "Standard Room"):
+        return _fallback(booking_ref)
 
-    # Check cache first (same hotel = same photo, no API call)
     cached = _get_cached(hotel_name, "hotel")
     if cached:
-        log.info(f"Hotel photo cache hit: {hotel_name}")
+        log.info(f"Photo cache hit: {hotel_name}")
         return cached
 
-    # Try Google Places API
     key = _api_key()
     if not key:
-        log.info("No GOOGLE_PLACES_API_KEY — using fallback")
-        return _fallback_hotel(booking_ref)
+        log.info("No SERPAPI_KEY set — using fallback photo")
+        return _fallback(booking_ref)
 
     try:
-        # Step 1: Find the hotel
-        with httpx.Client(timeout=10.0) as client:
-            search_resp = client.get(
-                "https://maps.googleapis.com/maps/api/place/findplacefromtext/json",
-                params={
-                    "input": hotel_name,
-                    "inputtype": "textquery",
-                    "fields": "place_id,photos",
-                    "key": key,
-                }
-            )
-            search_data = search_resp.json()
-            candidates = search_data.get("candidates", [])
-            if not candidates:
-                log.warning(f"No Google Places result for: {hotel_name}")
-                return _fallback_hotel(booking_ref)
+        resp = httpx.get("https://serpapi.com/search.json", params={
+            "engine": "google_maps",
+            "q": hotel_name,
+            "type": "search",
+            "api_key": key,
+        }, timeout=12)
 
-            place = candidates[0]
-            photos = place.get("photos", [])
-            if not photos:
-                log.warning(f"No photos for: {hotel_name}")
-                return _fallback_hotel(booking_ref)
+        data = resp.json()
+        place = data.get("place_results", {})
+        thumb = place.get("thumbnail", "")
 
-            # Step 2: Get the photo URL
-            photo_ref = photos[0]["photo_reference"]
-            photo_url = (
-                f"https://maps.googleapis.com/maps/api/place/photo"
-                f"?maxwidth=600&photo_reference={photo_ref}&key={key}"
-            )
+        if not thumb:
+            results = data.get("local_results", [])
+            if results:
+                thumb = results[0].get("thumbnail", "")
 
-            # Google Places Photo API returns a redirect to the actual image URL
-            # We follow the redirect to get the final CDN URL
-            photo_resp = client.get(photo_url, follow_redirects=True)
-            final_url = str(photo_resp.url)
-
-            # Cache it
-            _set_cache(hotel_name, "hotel", final_url)
-            log.info(f"Hotel photo fetched: {hotel_name} -> {final_url[:60]}...")
-            return final_url
+        if thumb and "lh3.googleusercontent.com" in thumb:
+            url = _resize_google_url(thumb, 600, 340)
+            _set_cache(hotel_name, "hotel", url)
+            log.info(f"Real hotel photo: {hotel_name} -> {url[:60]}...")
+            return url
+        else:
+            log.warning(f"No Google photo for: {hotel_name}")
+            return _fallback(booking_ref)
 
     except Exception as e:
-        log.error(f"Google Places API error: {e}")
-        return _fallback_hotel(booking_ref)
+        log.error(f"SerpApi error: {e}")
+        return _fallback(booking_ref)
 
 
 def get_bed_photo(room_type, hotel_name=""):
-    """Get a bed/room photo. Uses Google Places for the hotel's room, falls back to Unsplash."""
-    import re
+    """Get bed photo by room type. Curated Unsplash photos."""
     rt = (room_type or "").lower()
-
-    # For now, use curated bed photos by type
-    # Google Places doesn't have room-specific photos reliably
     if re.search(r'suite|presidential|penthouse|executive', rt):
         return FALLBACK_BEDS["suite"]
     elif re.search(r'double|2 queen|two queen|2 full|two full', rt):
@@ -147,8 +132,7 @@ def get_bed_photo(room_type, hotel_name=""):
         return FALLBACK_BEDS["king"]
 
 
-def _fallback_hotel(booking_ref):
-    """Pick a fallback Unsplash hotel photo based on booking ref hash."""
+def _fallback(booking_ref):
     if not booking_ref:
         return FALLBACK_HOTELS[0]
     idx = int(hashlib.md5(booking_ref.encode()).hexdigest(), 16) % len(FALLBACK_HOTELS)
