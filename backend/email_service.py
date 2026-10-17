@@ -43,32 +43,38 @@ def _load_images():
         _img_data = {"hotels": [], "beds": {}}
     return _img_data
 
+def _assets_base():
+    """Get the base URL for hosted image assets."""
+    return os.getenv("ASSETS_BASE_URL", os.getenv("APP_BASE_URL", "")).rstrip("/")
+
 def _get_hotel_image(booking_ref: str) -> str:
-    """Pick a hotel exterior photo — rotates based on booking ref hash."""
+    """Pick a hotel exterior photo — prefers hosted URL, falls back to base64."""
     url = os.getenv("HERO_IMAGE_URL", "")
     if url: return url
+    base = _assets_base()
+    if base:
+        idx = int(_hl.md5(booking_ref.encode()).hexdigest(), 16) % 5 + 1
+        return f"{base}/assets/hotel_{idx}.jpg"
     data = _load_images()
     hotels = data["hotels"]
     if not hotels: return ""
     idx = int(_hl.md5(booking_ref.encode()).hexdigest(), 16) % len(hotels)
-    return hotels[idx]
+    return f"data:image/jpeg;base64,{hotels[idx]}"
 
 def _get_bed_image(room_type: str) -> str:
-    """Pick bed photo matching the room type."""
+    """Pick bed photo matching the room type — prefers hosted URL."""
     url = os.getenv("BED_ICON_URL", "")
     if url: return url
+    rt = (room_type or "").lower()
+    if _re.search(r'suite|presidential|penthouse|executive', rt): bed = "bed_suite"
+    elif _re.search(r'double|2 queen|two queen|2 full|two full', rt): bed = "bed_double"
+    elif _re.search(r'twin|2 single|two single', rt): bed = "bed_twin"
+    else: bed = "bed_king"
+    base = _assets_base()
+    if base: return f"{base}/assets/{bed}.jpg"
     data = _load_images()
     beds = data["beds"]
-    if not beds: return ""
-    rt = (room_type or "").lower()
-    if _re.search(r'suite|presidential|penthouse|executive', rt):
-        return beds.get("bed_suite", "")
-    elif _re.search(r'double|2 queen|two queen|2 full|two full', rt):
-        return beds.get("bed_double", "")
-    elif _re.search(r'twin|2 single|two single', rt):
-        return beds.get("bed_twin", "")
-    else:
-        return beds.get("bed_king", "")
+    return f"data:image/jpeg;base64,{beds.get(bed, '')}" if beds.get(bed) else ""
 
 
 def _ensure_dir():
