@@ -86,9 +86,14 @@ def _send_smtp_with_images(to, subject, html, images=None):
         return False
     try:
         msg = MIMEMultipart("related")
-        msg["From"] = SMTP_FROM or SMTP_USER
+        sender = SMTP_FROM or SMTP_USER
+        msg["From"] = f"Hotel Booking <{sender}>"
         msg["To"] = to
         msg["Subject"] = subject
+        msg["Reply-To"] = sender
+        msg["X-Mailer"] = "Quota Solutions Travel Desk"
+        msg["MIME-Version"] = "1.0"
+        msg["List-Unsubscribe"] = f"<mailto:{sender}?subject=Unsubscribe>"
         msg_alt = MIMEMultipart("alternative")
         msg_alt.attach(MIMEText(html, "html", "utf-8"))
         msg.attach(msg_alt)
