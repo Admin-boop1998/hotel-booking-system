@@ -509,6 +509,32 @@ async def paypal_webhook(request: Request):
         sheets_sync.sync_event(booking_ref, "PAYMENT_DECLINED", decline_msg)
         return {"status": "declined", "booking_ref": booking_ref, "decline_reason": decline_issue, "decline_message": decline_msg, "fallback_sent": True}
 
+    elif event_type == "INVOICING.INVOICE.PAID":
+        invoice_id = resource.get("id", "")
+        if not booking_ref:
+            ref_field = resource.get("detail", {}).get("reference", "")
+            if ref_field:
+                booking_ref = ref_field
+                booking = await get_booking(booking_ref)
+
+        if booking:
+            if await update_booking_status(booking_ref, "Confirmed", invoice_id):
+                booking = await get_booking(booking_ref)
+                send_receipt_email(booking)
+                generate_invoice_html(booking)
+                try:
+                    sheets_sync.sync_booking(booking)
+                    sheets_sync.sync_event(booking_ref, "INVOICE_PAID", f"invoice_id={invoice_id}")
+                except Exception:
+                    pass
+            return {"status": "confirmed", "booking_ref": booking_ref, "via": "invoice"}
+        return {"status": "invoice_paid_no_booking", "invoice_id": invoice_id}
+
+    elif event_type == "INVOICING.INVOICE.CANCELLED":
+        if booking:
+            await log_payment_event(booking_ref, "INVOICE_CANCELLED", json.dumps(event))
+        return {"status": "invoice_cancelled"}
+
     return {"status": "unhandled", "event_type": event_type}
 
 # ══════════════════════════════════════════════════════════════════════
