@@ -65,12 +65,12 @@ def _get_hotel_url(hotel_name, booking_ref):
     return get_hotel_photo(hotel_name, booking_ref)
 
 
-def _get_bed_url(room_type):
-    """Get bed photo — matched to room type."""
+def _get_bed_url(room_type, hotel_name=""):
+    """Get bed photo — real from Google, fallback to Unsplash."""
     custom = os.getenv("BED_ICON_URL", "")
     if custom:
         return custom
-    return get_bed_photo(room_type)
+    return get_bed_photo(room_type, hotel_name)
 
 
 def _send_smtp_with_images(to, subject, html):
@@ -107,7 +107,7 @@ def _base_vars(booking):
     n = booking.get("parsed_nights") or _nights(booking["checkin_date"], booking["checkout_date"])
     hotel_name = booking.get("parsed_hotel_name") or booking.get("room_type", "Your Hotel")
     hero_url = _get_hotel_url(hotel_name, booking.get("booking_ref", ""))
-    bed_url = _get_bed_url(booking.get("room_type", ""))
+    bed_url = _get_bed_url(booking.get("room_type", ""), hotel_name)
     return {
         "guest_name": booking["guest_name"],
         "booking_ref": booking["booking_ref"],

@@ -120,8 +120,39 @@ def get_hotel_photo(hotel_name, booking_ref=""):
 
 
 def get_bed_photo(room_type, hotel_name=""):
-    """Get bed photo by room type. Curated Unsplash photos."""
+    """Get room photo — searches Google Images for hotel+room type. Falls back to Unsplash."""
     rt = (room_type or "").lower()
+    cache_name = f"{hotel_name}_{room_type}" if hotel_name else room_type
+
+    # Check cache
+    cached = _get_cached(cache_name, "bed")
+    if cached:
+        log.info(f"Bed photo cache hit: {cache_name}")
+        return cached
+
+    # Try Google Images via SerpApi
+    key = _api_key()
+    if key and hotel_name:
+        try:
+            query = f"{hotel_name} {room_type} hotel room"
+            resp = httpx.get("https://serpapi.com/search.json", params={
+                "engine": "google_images",
+                "q": query,
+                "api_key": key,
+                "num": 1,
+            }, timeout=12)
+            data = resp.json()
+            results = data.get("images_results", [])
+            if results:
+                thumb = results[0].get("thumbnail", "")
+                if thumb and "gstatic.com" in thumb:
+                    _set_cache(cache_name, "bed", thumb)
+                    log.info(f"Real room photo: {query} -> {thumb[:60]}...")
+                    return thumb
+        except Exception as e:
+            log.error(f"Google Images error: {e}")
+
+    # Fallback to Unsplash
     if re.search(r'suite|presidential|penthouse|executive', rt):
         return FALLBACK_BEDS["suite"]
     elif re.search(r'double|2 queen|two queen|2 full|two full', rt):
