@@ -484,7 +484,6 @@ async def create_invoice(booking: dict) -> dict:
         "invoice_url": invoice_url,
         "status": "SENT",
     }
-[4906 chars total]
 
 
 # ══════════════════════════════════════════════════════════════════════
