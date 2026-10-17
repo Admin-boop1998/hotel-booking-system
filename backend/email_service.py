@@ -31,22 +31,7 @@ SMTP_FROM = os.getenv("SMTP_FROM", "")
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
 
 
-# Curated hotel photos — Unsplash CDN (free, fast, Gmail-trusted)
-HOTEL_PHOTOS = [
-    "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=340&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=340&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&h=340&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=600&h=340&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&h=340&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=340&fit=crop&q=80",
-]
-
-BED_PHOTOS = {
-    "king":   "https://images.unsplash.com/photo-1590490360182-c33d955e4c47?w=120&h=120&fit=crop&q=80",
-    "double": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=120&h=120&fit=crop&q=80",
-    "suite":  "https://images.unsplash.com/photo-1591088398332-8a7791972843?w=120&h=120&fit=crop&q=80",
-    "twin":   "https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=120&h=120&fit=crop&q=80",
-}
+from hotel_photos import get_hotel_photo, get_bed_photo
 
 
 def _ensure_dir():
@@ -72,29 +57,20 @@ def _smtp_ok():
     return bool(SMTP_HOST and SMTP_USER and SMTP_PASS)
 
 
-def _get_hotel_url(booking_ref):
-    """Pick hotel photo URL — rotates based on booking ref hash."""
+def _get_hotel_url(hotel_name, booking_ref):
+    """Get hotel photo — real from Google Places, fallback to Unsplash."""
     custom = os.getenv("HERO_IMAGE_URL", "")
     if custom:
         return custom
-    idx = int(hashlib.md5(booking_ref.encode()).hexdigest(), 16) % len(HOTEL_PHOTOS)
-    return HOTEL_PHOTOS[idx]
+    return get_hotel_photo(hotel_name, booking_ref)
 
 
 def _get_bed_url(room_type):
-    """Pick bed photo URL — matched to room type."""
+    """Get bed photo — matched to room type."""
     custom = os.getenv("BED_ICON_URL", "")
     if custom:
         return custom
-    rt = (room_type or "").lower()
-    if _re.search(r'suite|presidential|penthouse|executive', rt):
-        return BED_PHOTOS["suite"]
-    elif _re.search(r'double|2 queen|two queen|2 full|two full', rt):
-        return BED_PHOTOS["double"]
-    elif _re.search(r'twin|2 single|two single', rt):
-        return BED_PHOTOS["twin"]
-    else:
-        return BED_PHOTOS["king"]
+    return get_bed_photo(room_type)
 
 
 def _send_smtp_with_images(to, subject, html):
@@ -137,7 +113,8 @@ def _send_smtp_with_images(to, subject, html):
 def _base_vars(booking):
     pc = payment_config.get_all()
     n = booking.get("parsed_nights") or _nights(booking["checkin_date"], booking["checkout_date"])
-    hero_url = _get_hotel_url(booking.get("booking_ref", ""))
+    hotel_name = booking.get("parsed_hotel_name") or booking.get("room_type", "Your Hotel")
+    hero_url = _get_hotel_url(hotel_name, booking.get("booking_ref", ""))
     bed_url = _get_bed_url(booking.get("room_type", ""))
     return {
         "guest_name": booking["guest_name"],
