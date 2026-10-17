@@ -31,6 +31,19 @@ SMTP_FROM = os.getenv("SMTP_FROM", "")
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
 
 
+def _read_as_data_uri(filepath):
+    """Read image file and return as data:image/jpeg;base64,... URI."""
+    if not filepath or not os.path.exists(filepath):
+        return ""
+    try:
+        import base64 as b64mod
+        with open(filepath, "rb") as img_f:
+            encoded = b64mod.b64encode(img_f.read()).decode()
+        return f"data:image/jpeg;base64,{encoded}"
+    except Exception:
+        return ""
+
+
 def _ensure_dir():
     os.makedirs(EMAIL_OUTPUT_DIR, exist_ok=True)
 
@@ -139,8 +152,8 @@ def _base_vars(booking):
         "agent_email": booking.get("agent_email") or pc.get("agent_default_email", ""),
         "checkin_time": pc.get("checkin_time", "3:00 PM"),
         "checkout_time": pc.get("checkout_time", "11:00 AM"),
-        "hero_image": f"cid:{hero_cid}" if hero_cid else "",
-        "bed_icon": f"cid:{bed_cid}" if bed_cid else "",
+        "hero_image": _read_as_data_uri(hero_path) if hero_path else "",
+        "bed_icon": _read_as_data_uri(bed_path) if bed_path else "",
         "year": datetime.now().year,
         "company_name": pc.get("company_name", "Quota Solutions"),
         "company_phone": pc.get("company_phone", ""),
@@ -185,10 +198,7 @@ def send_booking_confirmation(booking, paypal_url, payment_method="paypal"):
     fp = os.path.join(EMAIL_OUTPUT_DIR, f"confirmation_{ref}.html")
     with open(fp, "w") as f:
         f.write(html)
-    images = []
-    if hero_path: images.append((hero_path, hero_cid))
-    if bed_path: images.append((bed_path, bed_cid))
-    _send_smtp_with_images(booking["guest_email"], f"Your Reservation — {ref}", html, images)
+    _send_smtp_with_images(booking["guest_email"], f"Your Reservation — {ref}", html)
     log.info(f"Confirmation -> {booking['guest_email']} (method={payment_method}, images={len(images)})")
     return fp
 
