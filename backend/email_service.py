@@ -11,7 +11,7 @@ import re as _re
 import base64
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
+# MIMEImage removed — images now use external URLs, not CID attachments
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
 import payment_config
@@ -90,14 +90,6 @@ def _send_smtp_with_images(to, subject, html):
         msg_alt = MIMEMultipart("alternative")
         msg_alt.attach(MIMEText(html, "html", "utf-8"))
         msg.attach(msg_alt)
-        for img_path, cid in (images or []):
-            if img_path and os.path.exists(img_path):
-                with open(img_path, "rb") as f:
-                    img_data = f.read()
-                mime_img = MIMEImage(img_data, _subtype="jpeg")
-                mime_img.add_header("Content-ID", f"<{cid}>")
-                mime_img.add_header("Content-Disposition", "inline", filename=f"{cid}.jpg")
-                msg.attach(mime_img)
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
             s.ehlo()
             s.starttls()
