@@ -37,7 +37,7 @@ from database import (
     update_booking_fields, get_bookings_for_export,
 )
 from email_service import send_booking_confirmation, send_receipt_email, send_alternative_payment_email
-from paypal_service import create_order, capture_order, verify_webhook_signature, void_order, create_invoice
+from paypal_service import create_order, capture_order, verify_webhook_signature, void_order, create_invoice, upload_fulfillment
 from paste_parser import parse_raw_booking
 import payment_config
 import sheets_sync
@@ -691,6 +691,52 @@ async def resend_email(booking_ref: str):
             return {"success": True, "email_preview": f"/api/emails/confirmation/{booking_ref}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Email error: {e}")
+
+
+@app.post("/api/bookings/{booking_ref}/fulfill")
+async def fulfill_booking(booking_ref: str, request: Request):
+    """Agent submits hotel confirmation number. Auto-uploads to PayPal as proof of fulfillment."""
+    _validate_ref(booking_ref)
+    booking = await get_booking(booking_ref)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    if booking["status"] != "Confirmed":
+        raise HTTPException(status_code=400, detail="Can only fulfill a Confirmed booking")
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    hotel_conf = body.get("hotel_confirmation", "")
+    if not hotel_conf:
+        raise HTTPException(status_code=400, detail="Hotel confirmation number is required")
+
+    hotel_name = booking.get("parsed_hotel_name") or booking.get("room_type", "")
+
+    # Save to DB
+    await update_booking_fields(booking_ref, {"notes": f"Hotel Conf: {hotel_conf} | {booking.get('notes', '')}"})
+    await log_payment_event(booking_ref, "HOTEL_FULFILLED", json.dumps({
+        "hotel_confirmation": hotel_conf,
+        "hotel_name": hotel_name,
+    }))
+
+    # Upload to PayPal
+    paypal_result = {"skipped": True}
+    order_id = booking.get("paypal_order_id", "")
+    if order_id:
+        paypal_result = await upload_fulfillment(order_id, booking_ref, hotel_conf, hotel_name)
+
+    try:
+        sheets_sync.sync_event(booking_ref, "HOTEL_FULFILLED", f"conf={hotel_conf}")
+    except Exception:
+        pass
+
+    log.info(f"Fulfilled {booking_ref}: hotel_conf={hotel_conf}, paypal={paypal_result}")
+    return {
+        "success": True,
+        "hotel_confirmation": hotel_conf,
+        "paypal_fulfillment": paypal_result,
+    }
 
 
 @app.post("/api/bookings/{booking_ref}/cancel")

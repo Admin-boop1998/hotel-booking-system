@@ -485,3 +485,71 @@ async def create_invoice(booking: dict) -> dict:
         "status": "SENT",
     }
 [4906 chars total]
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  PROOF OF FULFILLMENT — Upload tracking to PayPal after service delivery
+# ══════════════════════════════════════════════════════════════════════
+
+async def upload_fulfillment(order_id: str, booking_ref: str, hotel_confirmation: str = "", hotel_name: str = "") -> dict:
+    """Upload proof of fulfillment to PayPal after hotel booking is confirmed.
+    This is critical for winning disputes — PayPal checks fulfillment status."""
+    if not order_id:
+        return {"success": False, "error": "No PayPal order ID"}
+
+    token = await _get_access_token()
+    tracking_number = hotel_confirmation or booking_ref
+    carrier = "OTHER"
+
+    payload = {
+        "trackers": [{
+            "transaction_id": order_id,
+            "tracking_number": tracking_number,
+            "carrier": carrier,
+            "carrier_name_other": "Hotel Confirmation",
+            "notify_payer": False,
+            "status": "SHIPPED",
+            "tracking_number_type": "CARRIER_PROVIDED",
+        }]
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+            resp = await client.post(
+                f"{_base_url()}/v2/checkout/orders/{order_id}/track",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+            if resp.status_code in (200, 201):
+                log.info(f"Fulfillment uploaded for order {order_id}: {tracking_number}")
+                return {"success": True, "tracking_number": tracking_number}
+            else:
+                # Try the v1 tracking API as fallback
+                v1_payload = {
+                    "trackers": [{
+                        "transaction_id": order_id,
+                        "tracking_number": tracking_number,
+                        "status": "SHIPPED",
+                        "carrier": "OTHER",
+                        "carrier_name_other": f"Hotel: {hotel_name}" if hotel_name else "Hotel Confirmation",
+                    }]
+                }
+                resp2 = await client.post(
+                    f"{_base_url()}/v1/shipping/trackers-batch",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json",
+                    },
+                    json=v1_payload,
+                )
+                if resp2.status_code in (200, 201):
+                    log.info(f"Fulfillment (v1) uploaded for {order_id}: {tracking_number}")
+                    return {"success": True, "tracking_number": tracking_number, "api": "v1"}
+                log.warning(f"Fulfillment upload failed: {resp2.status_code} {resp2.text[:200]}")
+                return {"success": False, "error": f"PayPal returned {resp2.status_code}"}
+    except Exception as e:
+        log.error(f"Fulfillment upload error: {e}")
+        return {"success": False, "error": str(e)}
