@@ -31,17 +31,22 @@ SMTP_FROM = os.getenv("SMTP_FROM", "")
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
 
 
-def _read_as_data_uri(filepath):
-    """Read image file and return as data:image/jpeg;base64,... URI."""
-    if not filepath or not os.path.exists(filepath):
-        return ""
-    try:
-        import base64 as b64mod
-        with open(filepath, "rb") as img_f:
-            encoded = b64mod.b64encode(img_f.read()).decode()
-        return f"data:image/jpeg;base64,{encoded}"
-    except Exception:
-        return ""
+# Curated hotel photos — Unsplash CDN (free, fast, Gmail-trusted)
+HOTEL_PHOTOS = [
+    "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=340&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=340&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&h=340&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=600&h=340&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&h=340&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=340&fit=crop&q=80",
+]
+
+BED_PHOTOS = {
+    "king":   "https://images.unsplash.com/photo-1590490360182-c33d955e4c47?w=120&h=120&fit=crop&q=80",
+    "double": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=120&h=120&fit=crop&q=80",
+    "suite":  "https://images.unsplash.com/photo-1591088398332-8a7791972843?w=120&h=120&fit=crop&q=80",
+    "twin":   "https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=120&h=120&fit=crop&q=80",
+}
 
 
 def _ensure_dir():
@@ -67,34 +72,33 @@ def _smtp_ok():
     return bool(SMTP_HOST and SMTP_USER and SMTP_PASS)
 
 
-def _get_hotel_cid(booking_ref):
-    """Pick hotel image file based on booking ref hash."""
-    idx = int(hashlib.md5(booking_ref.encode()).hexdigest(), 16) % 5 + 1
-    path = os.path.join(ASSETS_DIR, f"hotel_{idx}.jpg")
-    if os.path.exists(path):
-        return path, "hotel_hero"
-    return None, None
+def _get_hotel_url(booking_ref):
+    """Pick hotel photo URL — rotates based on booking ref hash."""
+    custom = os.getenv("HERO_IMAGE_URL", "")
+    if custom:
+        return custom
+    idx = int(hashlib.md5(booking_ref.encode()).hexdigest(), 16) % len(HOTEL_PHOTOS)
+    return HOTEL_PHOTOS[idx]
 
 
-def _get_bed_cid(room_type):
-    """Pick bed image file based on room type."""
+def _get_bed_url(room_type):
+    """Pick bed photo URL — matched to room type."""
+    custom = os.getenv("BED_ICON_URL", "")
+    if custom:
+        return custom
     rt = (room_type or "").lower()
     if _re.search(r'suite|presidential|penthouse|executive', rt):
-        bed = "bed_suite"
+        return BED_PHOTOS["suite"]
     elif _re.search(r'double|2 queen|two queen|2 full|two full', rt):
-        bed = "bed_double"
+        return BED_PHOTOS["double"]
     elif _re.search(r'twin|2 single|two single', rt):
-        bed = "bed_twin"
+        return BED_PHOTOS["twin"]
     else:
-        bed = "bed_king"
-    path = os.path.join(ASSETS_DIR, f"{bed}.jpg")
-    if os.path.exists(path):
-        return path, "bed_photo"
-    return None, None
+        return BED_PHOTOS["king"]
 
 
-def _send_smtp_with_images(to, subject, html, images=None):
-    """Send email with CID-attached inline images."""
+def _send_smtp_with_images(to, subject, html):
+    """Send HTML email via SMTP. Images are external URLs, no attachments needed."""
     if not _smtp_ok():
         return False
     try:
@@ -133,8 +137,8 @@ def _send_smtp_with_images(to, subject, html, images=None):
 def _base_vars(booking):
     pc = payment_config.get_all()
     n = booking.get("parsed_nights") or _nights(booking["checkin_date"], booking["checkout_date"])
-    hero_path, hero_cid = _get_hotel_cid(booking.get("booking_ref", ""))
-    bed_path, bed_cid = _get_bed_cid(booking.get("room_type", ""))
+    hero_url = _get_hotel_url(booking.get("booking_ref", ""))
+    bed_url = _get_bed_url(booking.get("room_type", ""))
     return {
         "guest_name": booking["guest_name"],
         "booking_ref": booking["booking_ref"],
@@ -152,8 +156,8 @@ def _base_vars(booking):
         "agent_email": booking.get("agent_email") or pc.get("agent_default_email", ""),
         "checkin_time": pc.get("checkin_time", "3:00 PM"),
         "checkout_time": pc.get("checkout_time", "11:00 AM"),
-        "hero_image": _read_as_data_uri(hero_path) if hero_path else "",
-        "bed_icon": _read_as_data_uri(bed_path) if bed_path else "",
+        "hero_image": hero_url,
+        "bed_icon": bed_url,
         "year": datetime.now().year,
         "company_name": pc.get("company_name", "Quota Solutions"),
         "company_phone": pc.get("company_phone", ""),
@@ -169,13 +173,13 @@ def _base_vars(booking):
         "zelle_contact": pc["zelle_contact"],
         "venmo_handle": pc["venmo_handle"],
         "wise_email": pc["wise_email"],
-    }, hero_path, hero_cid, bed_path, bed_cid
+    }
 
 
 def send_booking_confirmation(booking, paypal_url, payment_method="paypal"):
     _ensure_dir()
     tmpl = env.get_template("booking_confirmation.html")
-    v, hero_path, hero_cid, bed_path, bed_cid = _base_vars(booking)
+    v = _base_vars(booking)
     v["payment_method"] = payment_method
     v["paypal_url"] = paypal_url
     v["nightly_rates"] = booking.get("parsed_nightly_rates", [])
@@ -206,7 +210,7 @@ def send_booking_confirmation(booking, paypal_url, payment_method="paypal"):
 def send_receipt_email(booking):
     _ensure_dir()
     tmpl = env.get_template("receipt.html")
-    v, hero_path, hero_cid, bed_path, bed_cid = _base_vars(booking)
+    v = _base_vars(booking)
     v["paypal_capture_id"] = booking.get("paypal_capture_id", "N/A")
     html = tmpl.render(**v)
     fp = os.path.join(EMAIL_OUTPUT_DIR, f"receipt_{booking['booking_ref']}.html")
@@ -220,7 +224,7 @@ def send_receipt_email(booking):
 def send_alternative_payment_email(booking):
     _ensure_dir()
     tmpl = env.get_template("alternative_payment.html")
-    v, hero_path, hero_cid, bed_path, bed_cid = _base_vars(booking)
+    v = _base_vars(booking)
     paypal_order_id = booking.get("paypal_order_id", "")
     if paypal_order_id:
         mode = os.getenv("PAYPAL_MODE", "sandbox")
