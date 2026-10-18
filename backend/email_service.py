@@ -95,7 +95,7 @@ def _send_smtp_with_images(to, subject, html):
             s.starttls()
             s.login(SMTP_USER, SMTP_PASS)
             s.send_message(msg)
-        log.info(f"SMTP sent to {to} (with {len(images or [])} images)")
+        log.info(f"SMTP sent to {to}")
         return True
     except Exception as e:
         log.error(f"SMTP error: {e}")
@@ -172,7 +172,7 @@ def send_booking_confirmation(booking, paypal_url, payment_method="paypal"):
     with open(fp, "w") as f:
         f.write(html)
     _send_smtp_with_images(booking["guest_email"], f"Your Reservation — {ref}", html)
-    log.info(f"Confirmation -> {booking['guest_email']} (method={payment_method}, images={len(images)})")
+    log.info(f"Confirmation -> {booking['guest_email']} (method={payment_method})")
     return fp
 
 
