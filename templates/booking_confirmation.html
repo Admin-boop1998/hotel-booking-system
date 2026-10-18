@@ -150,30 +150,33 @@ body{margin:0;padding:0;width:100%!important;background:#F1F5F9}
 {% endif %}
 
 <!-- CLICKWRAP (all methods) -->
-<tr><td style="padding:0 24px 14px;">
-  <p style="font-family:Montserrat,sans-serif;font-size:10px;color:#64748B;margin:0;line-height:1.6;text-align:center;"><strong style="color:#1B2E4A;">Strictly Non-Refundable</strong><br>By completing this payment, you agree this discounted wholesale rate is not eligible for a cash refund. Voluntary cancellation forfeits the paid amount.</p>
+<tr><td style="padding:4px 24px 16px;">
+  <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:16px 20px;text-align:center;">
+    <p style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:#1B2E4A;margin:0 0 8px;">Strictly Non-Refundable</p>
+    <p style="font-family:Georgia,serif;font-size:14px;color:#475569;margin:0;line-height:1.7;">By completing this payment, you agree this discounted wholesale rate is not eligible for a cash refund. Voluntary cancellation forfeits the paid amount.</p>
+  </div>
 </td></tr>
 
 <!-- Proof reminder (non-PayPal) -->
 {% if payment_method not in ['paypal', 'paypal_invoice'] %}
 <tr><td style="padding:0 24px 14px;">
-  <p style="font-family:Montserrat,sans-serif;font-size:11px;color:#92400E;margin:0;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:11px 14px;line-height:1.5;"><strong>Reply to this email</strong> with a screenshot of your payment confirmation.</p>
+  <p style="font-family:Georgia,serif;font-size:14px;color:#92400E;margin:0;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:14px 18px;line-height:1.6;"><strong>Reply to this email</strong> with a screenshot of your payment confirmation.</p>
 </td></tr>
 {% endif %}
 
-<!-- Cancellation (one line) -->
+<!-- Cancellation ref -->
 <tr><td style="padding:0 24px 14px;">
-  <p style="font-family:Montserrat,sans-serif;font-size:10px;color:#B0B8C1;margin:0;line-height:1.5;">All payments are non-refundable · Voluntary cancellation forfeits the paid amount · {{ booking_ref }}</p>
+  <p style="font-family:Georgia,serif;font-size:13px;color:#94A3B8;margin:0;line-height:1.5;text-align:center;">All payments are non-refundable · Ref: {{ booking_ref }}</p>
 </td></tr>
 
 <!-- ═══════════════════════════════════════════════════════════
      6. CUSTOMER SUPPORT CONTACT
      ═══════════════════════════════════════════════════════════ -->
-<tr><td style="padding:0 24px 18px;border-top:1px solid #F0F2F5;">
-  <table role="presentation" width="100%" style="padding-top:14px;"><tr>
-    <td style="font-family:Montserrat,sans-serif;font-size:11px;color:#6B7785;line-height:1.6;">
-      <strong style="color:#1B2E4A;">{{ agent_name }}</strong>{% if agent_phone %} · {{ agent_phone }}{% endif %}<br>
-      {% if company_phone %}{{ company_phone }}{% endif %}{% if support_hours %} · {{ support_hours }}{% endif %}
+<tr><td style="padding:4px 24px 20px;border-top:1px solid #F0F2F5;">
+  <table role="presentation" width="100%" style="padding-top:16px;"><tr>
+    <td style="font-family:Georgia,serif;font-size:15px;color:#475569;line-height:1.8;">
+      <strong style="color:#1B2E4A;font-size:16px;">{{ agent_name }}</strong>{% if agent_phone %} · {{ agent_phone }}{% endif %}<br>
+      {% if company_phone %}<span style="font-size:14px;">{{ company_phone }}</span>{% endif %}{% if support_hours %} · <span style="font-size:14px;">{{ support_hours }}</span>{% endif %}
     </td>
   </tr></table>
 </td></tr>
@@ -181,9 +184,9 @@ body{margin:0;padding:0;width:100%!important;background:#F1F5F9}
 <!-- ═══════════════════════════════════════════════════════════
      7. FOOTER — FINAL TOUCH
      ═══════════════════════════════════════════════════════════ -->
-<tr><td style="background:#1B2E4A;padding:16px 24px;text-align:center;border-radius:0 0 12px 12px;">
-  <p style="font-family:Montserrat,sans-serif;font-size:9px;color:rgba(255,255,255,.35);margin:0;letter-spacing:.3px;">{{ company_name }} · {{ company_website }} · {{ booking_ref }}</p>
-  <p style="font-family:Montserrat,sans-serif;font-size:8px;color:rgba(255,255,255,.2);margin:4px 0 0;">© {{ year }} All rights reserved · <a href="mailto:{{ company_email }}?subject=Unsubscribe" style="color:rgba(255,255,255,.3);text-decoration:underline;">Unsubscribe</a></p>
+<tr><td style="background:#1B2E4A;padding:20px 24px;text-align:center;border-radius:0 0 12px 12px;">
+  <p style="font-family:Georgia,serif;font-size:13px;color:rgba(255,255,255,.5);margin:0;letter-spacing:.3px;">{{ company_name }} · {{ company_website }}</p>
+  <p style="font-family:Georgia,serif;font-size:12px;color:rgba(255,255,255,.3);margin:6px 0 0;">© {{ year }} All rights reserved · <a href="mailto:{{ company_email }}?subject=Unsubscribe" style="color:rgba(255,255,255,.4);text-decoration:underline;">Unsubscribe</a></p>
 </td></tr>
 
 </table>
